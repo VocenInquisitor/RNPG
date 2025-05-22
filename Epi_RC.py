@@ -8,8 +8,9 @@ Created on Mon Feb  3 17:00:05 2025
 import numpy as np
 import pickle
 from KL_uncertainity_evaluator import Robust_pol_Kl_uncertainity
-from Machine_Rep import Machine_Replacement
+#from Machine_Rep import Machine_Replacement
 import time
+from Forzen_lk import my_env
 class Epi_RC:
     def __init__(self,env,P,T,C_KL,cost_list,b_constraint,discount,env_nm):
         self.nS = env.nS
@@ -49,20 +50,22 @@ class Epi_RC:
         #input()
         return policy
     def find_pol_for_epi(self,b):
-        pol = np.ones((self.nS,self.nA))*0.5
+        pol = np.ones((self.nS,self.nA))*1/self.nA
         for t in range(self.T):
             Vr,gradr = self.pol_eval.evaluate_policy(pol, self.P, self.C_KL, 0,t)
             Vc,gradc = self.pol_eval.evaluate_policy(pol, self.P, self.C_KL, 1,t)
             #print(Vr,Vc)
             #input()
             V,g = 0,0
-            if(Vr-b>Vc-self.b_constraint):
+            if(b-Vr>Vc-self.b_constraint):
                 V,g = Vr,gradr
             else:
                 V,g = Vc,gradc
             #print(Vr)
             #print(pol)
             #input()
+            self.objective_list.append(Vr)
+            self.constraint_list.append(Vc)
             pol = self.Proj(pol,V,g)
         return pol
     def main_algo(self):
@@ -79,11 +82,10 @@ class Epi_RC:
             Vc,gradc = self.pol_eval.evaluate_policy(pol, self.P, self.C_KL, 1,k)
             #Vr,Vc = Vr,Vc
             #print(Vr,Vc)
-            self.objective_list.append(Vr)
-            self.constraint_list.append(Vc)
+            
             #print(Vr-b)
             #print(Vc-self.b_constraint)
-            del_k = np.max([Vr-b,Vc-self.b_constraint])
+            del_k = np.max([b-Vr,Vc-self.b_constraint])
             #print(del_k)
             if(del_k>0):
                 low = b;
@@ -100,7 +102,26 @@ class Epi_RC:
         f.close()
         return pol
 #nS, nA = 6,2
-env = Machine_Replacement()
+env = my_env(4)
+nS,nA = 16,4
+P,R,C = env.__make__()
+R = R/np.max(R)
+C = np.exp(C)
+C = C/np.max(C)
+b_constraint = 50
+cost_list = [R,C]
+discount = 0.99
+env_nm = "Frozen_lake"
+T=100
+C_KL = 0.1
+model = Epi_RC(env, P, T, C_KL, cost_list, b_constraint, discount, env_nm)
+start_tm = time.time()
+fin_pol  = model.main_algo()
+print("Execution time:",time.time()-start_tm )          
+print("All files saved. Training complete")
+
+
+'''env = Machine_Replacement()
 ch,exp = 0,0
 P,R,C = env.gen_probability(),env.gen_expected_reward(ch),env.gen_expected_cost(exp)
 b_constraint = 25
@@ -114,6 +135,6 @@ start_tm = time.time()
 fin_pol  = model.main_algo()
 print("Execution time:",time.time()-start_tm )          
 print("All files saved. Training complete")
-print(fin_pol)
+print(fin_pol)'''
             
         

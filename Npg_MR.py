@@ -42,7 +42,7 @@ def natural_gradient_update(theta, grad, kl_lambda, alpha,ch_dep,ch):
 
 
 # === Environment Setup === #
-nS,nA = 15,20
+nS,nA = int(np.power(6,4)),2
 env = Garnet(nS,nA)
 env_dep = 2  #0 for MR, 1 for RS and 2 for Garnet
 nS, nA = env.nS, env.nA
@@ -62,7 +62,7 @@ C_KL = 0.02
 kl_lambda = 50
 alpha = 0.5
 T = 1000
-b = 90
+b = 120
 
 # === Initialize theta === #
 theta = np.random.randn(nS, nA)
@@ -79,7 +79,10 @@ for t in range(T):
     cf.append(J_c)
 
     # Choose which gradient to follow
-    ch = np.argmax([J_v, kl_lambda*(np.max(J_c-b,0))])
+    if env_dep!=2:
+        ch = np.argmax([J_v, kl_lambda*(np.max(J_c-b,0))])
+    else:
+        ch = np.argmax([J_v, kl_lambda*(np.max(b-J_c,0))])
     grad = grad_v if ch == 0 else grad_c
 
     # Flatten gradient and apply natural-like update
@@ -100,11 +103,11 @@ for t in range(T):
 
 print("Time taken:",time.time()-start)
 
-with open("Value_function_kl_lambda_Gar_"+str(kl_lambda)+".pkl","wb") as f:
+with open("Value_function_kl_lambda_Gar_"+str(nS)+"_"+str(nA)+"_"+str(kl_lambda)+".pkl","wb") as f:
     pickle.dump(vf,f)
 f.close()
 
-with open("Cost_function_kl_lambda_Gar_"+str(kl_lambda)+".pkl","wb") as f:
+with open("Cost_function_kl_lambda_Gar_"+str(nS)+"_"+str(nA)+"_"+str(kl_lambda)+".pkl","wb") as f:
     pickle.dump(cf,f)
 f.close()
 # Final policy

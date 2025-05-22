@@ -16,6 +16,8 @@ class Robust_pol_Kl_uncertainity:
         self.init_dist = init_dist
         self.gamma = 0.995
         self.alpha = alpha
+    def set_cost(self,cost_list):
+        self.cost_list = cost_list
     def calculate_infinite_Q(self,n,policy,P,C_KL):
         C = self.cost_list[n]
         Q = np.zeros((self.nS,self.nA))
